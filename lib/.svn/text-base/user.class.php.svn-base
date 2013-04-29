@@ -1,0 +1,575 @@
+<?php
+
+
+
+ /* Require the OpenID consumer code.
+ */
+require_once "Auth/OpenID/Consumer.php";
+
+/**
+ * Require the "file store" module, which we'll need to store
+ * OpenID information.
+ */
+require_once "Auth/OpenID/FileStore.php";
+
+/**
+ * Require the Simple Registration extension API.
+ */
+require_once "Auth/OpenID/SReg.php";
+
+/**
+ * Require the PAPE extension module.
+ */
+require_once "Auth/OpenID/PAPE.php";
+
+session_start();
+
+
+global $pape_policy_uris;
+$pape_policy_uris = array(
+			  PAPE_AUTH_MULTI_FACTOR_PHYSICAL,
+			  PAPE_AUTH_MULTI_FACTOR,
+			  PAPE_AUTH_PHISHING_RESISTANT
+			  );
+
+$ldapconfig['host'] = 'celeborn.cetis.ac.uk';
+$ldapconfig['port'] = NULL;
+$ldapconfig['basedn'] = 'ou=people,dc=cetis,dc=ac,dc=uk';
+$ldapconfig['authrealm'] = 'Cetis';
+$ldapconfig['proddn'] ='cn=prod,ou=groups,ou=people,dc=cetis,dc=ac,dc=uk';
+
+
+if (strpos($_SERVER['SERVER_NAME'],"cetis.ac.uk")!=FALSE){
+	$ldapconfig['cookiedomain']="cetis.ac.uk";
+} else {
+	$ldapconfig['cookiedomain']=$_SERVER['SERVER_NAME'];
+	
+}
+     
+
+          
+class user{
+	var $uid;
+	var $name;
+	var $dblhash;
+	var $isadmin;
+	var $isprod;
+	var $ldapdata;
+	var $loggedin;
+	
+	var $email;
+	var $phone;
+	var $displayname;
+	
+	
+	function user($uid=NULL,$pass=NULL){
+		global $testmode;
+		
+		if ($testmode===TRUE){
+			
+			$this->uid="spod";
+			$this->name="Spoddy Mc Spod";
+			$this->isadmin=TRUE;
+			$this->loggedin=TRUE;
+			//$this->setusercookies();
+			
+			return;
+		}
+		
+		$this->loggedin=FALSE;
+		
+		if (isset($uid) && isset($pass)){
+      
+			$this->authenticate($uid,$pass);
+			
+		} else {
+       
+			$this->fetchusercookies();
+			$verification=$this->verify_dblhash();
+			
+			if ($verification==TRUE){
+				$this->loggedin=TRUE;
+				$this->fetchldapdata();
+			} else {
+			
+				if (isset($_SESSION['loggedin']) AND $_SESSION['loggedin']===TRUE){
+					$this->uid=$_SESSION['uid'];
+					$this->uid=$_SESSION['uid'];
+					
+					$this->loggedin=TRUE;
+				}
+				
+			}
+		}
+		
+		if ($this->loggedin){
+			$this->amiadmin();
+		}
+		
+		//$ldapconfig['cookiedomain']="127.0.0.1";	
+	}
+	
+	function searchbyemail($email){
+		global $ldapconfig;
+		
+			$ds=@ldap_connect($ldapconfig['host'],$ldapconfig['port']);
+			$r = @ldap_search( $ds, $ldapconfig['basedn'], "mail=$email");
+		
+			                                                                              
+			if ($r) {
+				$result = @ldap_get_entries( $ds, $r);
+				if ($result) {
+					if ($result['count']>0){
+						return TRUE;
+					}
+				}
+			}
+			
+			return FALSE;
+	
+	}
+	
+	function authenticatebyemail($email,$password){
+	
+	
+	
+	}
+
+	function setusercookies(){
+		global $ldapconfig;
+		$time = false;
+		$domain = false;
+		
+		if ($ldapconfig['cookiedomain']=="localhost" ){
+		setcookie ( "cetis_uid" , $this->uid , $time , "/", $domain );
+		setcookie ( "cetis_dblhash", $this->dblhash , $time , "/", $domain );
+		}
+		else
+		{
+		setcookie ( "cetis_uid" , $this->uid , time()+60*60*24*30  , "/", $ldapconfig['cookiedomain'] );
+		setcookie ( "cetis_dblhash", $this->dblhash , time()+60*60*24*30  , "/", $ldapconfig['cookiedomain'] );
+		}
+		
+		
+		$_SESSION['uid']=$this->uid;
+		$_SESSION['name']=$this->name;
+		$_SESSION['email']=$this->email;
+		$_SESSION['loggedin']=$this->loggedin;
+		
+		
+	}
+	
+	function fetchusercookies(){
+		
+		if (isset($_COOKIE['cetis_uid']) AND isset($_COOKIE['cetis_dblhash'])){
+			$this->uid=$_COOKIE['cetis_uid'];
+			$this->dblhash=$_COOKIE['cetis_dblhash'];
+		}
+		if (isset($_SESSION['loggedin'])){
+		$this->uid=$_SESSION['uid'];
+		$this->name=$_SESSION['name'];
+		$this->email=$_SESSION['email'];
+		$this->loggedin=$_SESSION['loggedin'];
+		}
+		
+	}
+
+
+	function clearcookies(){
+		global $ldapconfig;
+		setcookie ( "cetis_uid" , "" , time()-1800 , "/", $ldapconfig['cookiedomain']);
+		setcookie ( "cetis_dblhash", "", time()-1800 , "/", $ldapconfig['cookiedomain'] );
+		
+		setcookie ( "cetis_uid" , "" , false , "/", false);
+		setcookie ( "cetis_dblhash", "", false , "/", false);
+		
+				$_SESSION['uid']=null;
+		$_SESSION['name']=null;
+		$_SESSION['email']=null;
+		$_SESSION['loggedin']=null;
+		
+	}
+	
+	function authenticate($uid,$pass){
+
+		
+		$result=FALSE;
+		
+		$result=$this->ldap_authenticate($uid,$pass);
+		
+		if ($result){
+		
+			
+			$this->uid=$uid;
+			$this->loggedin=TRUE;
+
+			
+			$md5pw =base64_encode(pack("H*",md5( $pass)));
+			$this->dblhash= base64_encode(pack("H*",md5( $md5pw)));
+			
+			$this->setusercookies();
+		}
+		
+		return $result;
+	}
+	
+
+	function openid_authenticate($openidurl){
+		$consumer = $this->openid_getConsumer();
+		
+	    // Begin the OpenID authentication process.
+    	$auth_request = $consumer->begin($openidurl);
+    	
+    	 // No auth request means we can't begin OpenID.
+		if (!$auth_request) {
+			print("Authentication error; not a valid OpenID.");
+			exit();
+			
+		}
+		
+		
+		
+    $sreg_request = Auth_OpenID_SRegRequest::build(
+                                     // Required
+                                     array('nickname'),
+                                     // Optional
+                                     array('fullname', 'email'));
+
+    if ($sreg_request) {
+        $auth_request->addExtension($sreg_request);
+    }
+	if (isset($_REQUEST['policies'])){
+    $policy_uris = $_GET['policies'];
+    } else {
+     $policy_uris=null;
+    }
+
+    $pape_request = new Auth_OpenID_PAPE_Request($policy_uris);
+    if ($pape_request) {
+        $auth_request->addExtension($pape_request);
+    }
+
+    // Redirect the user to the OpenID server for authentication.
+    // Store the token for this authentication so we can verify the
+    // response.
+
+    // For OpenID 1, send a redirect.  For OpenID 2, use a Javascript
+    // form to send a POST request to the server.
+    if ($auth_request->shouldSendRedirect()) {
+        $redirect_url = $auth_request->redirectURL($this->openid_getTrustRoot(),
+                                                   $this->openid_getReturnTo());
+
+        // If the redirect URL can't be built, display an error
+        // message.
+        if (Auth_OpenID::isFailure($redirect_url)) {
+            displayError("Could not redirect to server: " . $redirect_url->message);
+        } else {
+            // Send redirect.
+            header("Location: ".$redirect_url);
+        }
+    } else {
+        // Generate form markup and render it.
+        $form_id = 'openid_message';
+        $form_html = $auth_request->htmlMarkup($this->openid_getTrustRoot(), $this->openid_getReturnTo(),
+                                               false, array('id' => $form_id));
+
+        // Display an error if the form markup couldn't be generated;
+        // otherwise, render the HTML.
+        if (Auth_OpenID::isFailure($form_html)) {
+            displayError("Could not redirect to server: " . $form_html->message);
+        } else {
+            print $form_html;
+        }
+    }
+	
+	}
+	
+	
+	function openid_finish(){
+	$consumer = $this->openid_getConsumer();
+	
+	 $return_to = $this->openid_getReturnTo();
+    $response = $consumer->complete($return_to);
+
+    // Check the response status.
+    if ($response->status == Auth_OpenID_CANCEL) {
+        // This means the authentication was cancelled.
+        $msg = 'Verification cancelled.';
+    } else if ($response->status == Auth_OpenID_FAILURE) {
+        // Authentication failed; display the error message.
+        $msg = "OpenID authentication failed: " . $response->message;
+    } else if ($response->status == Auth_OpenID_SUCCESS) {
+        
+        // This means the authentication succeeded; extract the
+        // identity URL and Simple Registration data (if it was
+        // returned).
+        
+        
+		$this->loggedin=TRUE;
+		
+		
+		
+        
+        $openid = $response->getDisplayIdentifier();
+        $esc_identity = $this->openid_escape($openid);
+
+        $success = sprintf('You have successfully verified ' .
+                           '<a href="%s">%s</a> as your identity.',
+                           $esc_identity, $esc_identity);
+
+        if ($response->endpoint->canonicalID) {
+            $escaped_canonicalID =  $this->openid_escape($response->endpoint->canonicalID);
+            $success .= '  (XRI CanonicalID: '.$escaped_canonicalID.') ';
+        }
+
+        $sreg_resp = Auth_OpenID_SRegResponse::fromSuccessResponse($response);
+
+        $sreg = $sreg_resp->contents();
+
+        if (@$sreg['email']) {
+            $success .= "  You also returned '". $this->openid_escape($sreg['email']).
+                "' as your email.";
+        }
+
+        if (@$sreg['nickname']) {
+
+
+            $success .= "  Your nickname is '". $this->openid_escape($sreg['nickname']).
+                "'.";
+            	$this->uid= $this->openid_escape($sreg['nickname']);
+        } else {
+      	  $this->uid=$openid;
+        }
+
+        if (@$sreg['fullname']) {
+            $success .= "  Your fullname is '". $this->openid_escape($sreg['fullname']).
+                "'.";
+           			$this->name=$this->openid_escape($sreg['fullname']);
+        }
+
+	$pape_resp = Auth_OpenID_PAPE_Response::fromSuccessResponse($response);
+
+	if ($pape_resp) {
+            if ($pape_resp->auth_policies) {
+                $success .= "<p>The following PAPE policies affected the authentication:</p><ul>";
+
+                foreach ($pape_resp->auth_policies as $uri) {
+                    $escaped_uri = $this->openid_escape($uri);
+                    $success .= "<li><tt>$escaped_uri</tt></li>";
+                }
+
+                $success .= "</ul>";
+            } else {
+                $success .= "<p>No PAPE policies affected the authentication.</p>";
+            }
+
+            if ($pape_resp->auth_age) {
+                $age = escape($pape_resp->auth_age);
+                $success .= "<p>The authentication age returned by the " .
+                    "server is: <tt>".$age."</tt></p>";
+            }
+
+            if ($pape_resp->nist_auth_level) {
+                $auth_level = escape($pape_resp->nist_auth_level);
+                $success .= "<p>The NIST auth level returned by the " .
+                    "server is: <tt>".$auth_level."</tt></p>";
+            }
+
+	} else {
+            $success .= "<p>No PAPE response was sent by the provider.</p>";
+	}
+    }
+
+	//print $success;
+	//print $msg;
+
+			//$this->isadmin=TRUE;
+			$this->setusercookies();
+		//	return;
+	
+	}
+	
+	function openid_escape($thing) {
+	    return htmlentities($thing);
+	}
+
+	
+	function &openid_getStore() {
+    /**
+     * This is where the example will store its OpenID information.
+     * You should change this path if you want the example store to be
+     * created elsewhere.  After you're done playing with the example
+     * script, you'll have to remove this directory manually.
+     */
+    $store_path = "/tmp/_php_consumer_test";
+
+    if (!file_exists($store_path) &&
+        !mkdir($store_path)) {
+        print "Could not create the FileStore directory '$store_path'. ".
+            " Please check the effective permissions.";
+        exit(0);
+    }
+	$fs=new Auth_OpenID_FileStore($store_path);
+    return $fs;
+	}
+	
+	function &openid_getConsumer() {
+		/**
+		 * Create a consumer object using the store object created
+		 * earlier.
+		 */
+		$store = $this->openid_getStore();
+		$consumer =& new Auth_OpenID_Consumer($store);
+		return $consumer;
+	}
+	
+	
+	
+	function openid_getScheme() {
+		$scheme = 'http';
+		if (isset($_SERVER['HTTPS']) and $_SERVER['HTTPS'] == 'on') {
+			$scheme .= 's';
+		}
+		return $scheme;
+	}
+	
+	function openid_getReturnTo() {
+		return sprintf("%s://%s:%s%s/login.php",
+					   $this->openid_getScheme(), $_SERVER['SERVER_NAME'],
+					   $_SERVER['SERVER_PORT'],
+					   dirname($_SERVER['PHP_SELF']));
+	}
+	
+	function openid_getTrustRoot() {
+		return sprintf("%s://%s:%s%s/",
+					   $this->openid_getScheme(), $_SERVER['SERVER_NAME'],
+					   $_SERVER['SERVER_PORT'],
+					   dirname($_SERVER['PHP_SELF']));
+	}
+	
+	function ldap_authenticate($user,$pass) {
+		global $ldapconfig;
+	                                                
+		
+		if ($user != "" && $pass != "") {
+		
+			$ds=@ldap_connect($ldapconfig['host'],$ldapconfig['port']);
+			$r = @ldap_search( $ds, $ldapconfig['basedn'], "uid=$user");
+		
+			                                                                              
+			if ($r) {
+				$result = @ldap_get_entries( $ds, $r);
+				if ($result[0]) {
+				
+					if (@ldap_bind( $ds, $result[0]['dn'], $pass) ) {
+						// Auth Success - return the results
+						$this->ldapdata=$result[0];
+						
+						$this->name=$result[0]['cn'][0];
+						$this->email=$result[0]['mail'][0];
+						if (isset($result[0]['displayname'])){
+						$this->displayname=$result[0]['displayname'][0];
+						} else {
+						$this->displayname=$this->name;
+						}
+						return TRUE;
+						
+					}
+				}
+			}
+		}
+		return FALSE;
+	}
+	
+	function fetchldapdata(){
+		global $ldapconfig;
+		if (isset($this->ldapdata)){
+			return $this->ldapdata;
+		}
+		
+		if ($this->uid != "" AND $this->ldapdata=="") {
+			$ds=@ldap_connect($ldapconfig['host'],$ldapconfig['port']);
+			$r = @ldap_search( $ds, $ldapconfig['basedn'], 'uid=' . $this->uid);
+			if ($r) {
+				$result = @ldap_get_entries( $ds, $r);
+				if (isset($result[0])) {
+					$this->ldapdata=$result[0];
+	
+					$this->name=$result[0]['cn'][0];
+					$this->email=$result[0]['mail'][0];
+					//$this->displayname=$result[0]['displayname'][0];
+					
+					//get prod staff
+					$ds1=@ldap_connect($ldapconfig['host'],$ldapconfig['port']);
+					$justthese= array("member");
+					$r1 = @ldap_search( $ds1, $ldapconfig['proddn'], 'member=uid=' . $this->uid . ',ou=webusers,ou=people,dc=cetis,dc=ac,dc=uk',$justthese);
+					$result1 = @ldap_get_entries( $ds1, $r1);
+					
+			
+					
+					if ($result1['count']) {
+						$result1 = @ldap_get_entries( $ds1, $r1);
+						$this->isprod= true; 
+					}
+					
+					
+					return $result[0];
+				}
+			}
+		}
+		return NULL;
+
+	}
+	
+	
+	function verify_dblhash(){
+		global $debug;
+		
+
+		$userdetails=$this->fetchldapdata();
+	
+		$userpassword=$userdetails['userpassword'][0];
+		$ldapdblhash=base64_encode(pack("H*",md5(substr($userpassword,5))));
+		if ($this->dblhash==$ldapdblhash){
+			if ($debug){print "HASH OK<br/><br/> $user <br/> $dblhash <br/> $ldapdblhash <br/> $userpassword";
+			}
+			return TRUE;
+		} else {
+			if ($debug){print "PASSWORD HASH INCORRECT<br/> $user <br/> $dblhash <br/> $ldapdblhash <br/> $userpassword";
+			}
+			return FALSE;
+		}
+	}
+	
+	function amiadmin(){
+		global $testmode;
+		
+		if ($testmode===TRUE){
+			return TRUE;
+		}
+		
+		$ldapdata=$this->fetchldapdata();
+		if (strstr($ldapdata['dn'],"ou=staff,ou=people,dc=cetis,dc=ac,dc=uk")){
+			$this->isadmin=TRUE;
+			return TRUE;
+		} else {
+			$this->isadmin=FALSE;
+			return FALSE;
+		}
+	}
+	
+	
+	function amistaff(){
+		return $this->amiadmin();
+	}
+
+	
+	
+	
+
+
+
+
+}
+
+?>

@@ -1,0 +1,7 @@
+K 13
+svn:externals
+V 121
+smarty http://smarty-php.googlecode.com/svn/tags/Smarty_2_6_21/libs/
+simplepie http://svn.simplepie.org/simplepie/trunk/
+
+END

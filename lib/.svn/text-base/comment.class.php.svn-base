@@ -1,0 +1,105 @@
+<?php
+
+class comments extends database_collection{
+
+	var $project_id;
+	
+	function comments($project_id=null){
+		$this->database_collection("comments","comment");
+		$this->project_id=$project_id;
+	}
+	
+	function get_comments($limit=null){
+		$sql="
+			SELECT id FROM comments
+			WHERE project_id='".$this->project_id."'
+			ORDER BY created DESC";
+		return $this->get_bysql($sql);
+	}
+
+		function destroy(){
+		
+		if (!is_null($this->project_id)){
+		
+		
+			$comments=$this->get_comments();
+			if (is_array($comments)){
+			foreach ($comments as $comment){
+				$comment->destroy();
+			}
+			}
+		
+		}
+		
+		
+	}
+		
+}
+
+class comment extends database_record{
+
+	function comment($id=null){
+		$this->database_record($id,"comments");
+	}
+	
+	function set_comment($comment,$project_id=null,$privatecomment=0){
+		global $user;
+		
+		$comment;
+		
+		$this->comment=$comment;
+		
+		if (isset($privatecomment)){
+		
+			$this->privatecomment=$privatecomment;
+		
+		}
+		
+		if (!is_null($project_id)){
+			$this->project_id=$project_id;
+		}
+		
+		if (!isset($this->uid)){
+			$this->uid=$user->uid;
+		}
+		
+		//CREATE AN ACTIVITY ITEM TO GO WITH THE COMMENT
+
+		$projectobj=new project($this->project_id);
+		$items=$projectobj->activities->get_activities();
+		
+		//check if we have user in last comment
+		/*no longer logging comments
+		$lastuser = false;
+		
+		if (isset($items[0]->details)){
+			$needle = $user->name;
+			$haystack = $items[0]->details;
+			if (stristr( $haystack, $needle)){
+				$lastuser = true;
+			}
+		}
+		
+
+		if (!isset($this->created)){
+			$this->created=date("Y-m-d H:i:s");
+			if ($lastuser==false){
+				$activity=new activity();
+				$details=$user->name." posted a comment";
+				$activity->logevent($this->project_id,5,$details);
+			}else{	
+			$oldactivity=new activity($items[0]->id);
+			$oldactivity->hide();
+			$activity=new activity();
+			$details=$user->name." updated project details";
+			$activity->logevent($this->project_id,5,$details);	
+			}
+		}
+		*/
+				$this->created=date("Y-m-d H:i:s");
+				$this->modified=date("Y-m-d H:i:s");
+				$this->savetodb();
+		
+	}
+}
+?>

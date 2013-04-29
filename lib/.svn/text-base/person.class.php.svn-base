@@ -1,0 +1,79 @@
+<?php
+
+
+class people extends database_collection{
+	var $people=array();
+	
+	function people(){
+		$this->database_collection("people","person");
+	}
+	
+	function searchpeople($searchterm){
+		$sql="
+			SELECT id FROM people
+			WHERE name LIKE '%$searchterm%'
+			OR email LIKE '%$searchterm%'
+			ORDER BY name ASC";
+			
+			$peoplefound= $this->get_bysql($sql);	
+	
+		
+		return $peoplefound;
+	}
+	
+}
+
+class person extends database_record{
+
+	function person($id=null){
+		$this->database_record($id,"people");
+	}
+	
+	/* Accessors */
+
+	function setName($name){
+		$this->name=$name;
+		$this->savetodb();
+	}
+	
+	function getName(){
+		return $this->name;
+	}
+	
+	function setEmail($email){
+		$this->email=$email;
+		$this->savetodb();
+	}
+	
+	
+	function getEmail(){
+		return $this->email;
+	}
+	
+	function setOrganisation($orgid){
+		if (is_numeric($orgid)){
+			$this->organisation_id=$orgid;
+			$this->savetodb();
+		}
+	}
+	
+	function getOrganisation(){
+		return $this->organisation_id;
+	}
+	
+
+	function setCetisUid($cetisuid){
+		$this->cetis_uid=$cetisuid;
+		$this->savetodb();
+	}
+
+	function getCetisUid(){
+		return $this->cetis_uid;
+	}
+	
+	
+}
+
+
+
+?>

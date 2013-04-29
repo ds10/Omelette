@@ -1,0 +1,198 @@
+<?php
+
+// INIT SCRIPT
+// Sets up templating, databases, event manager, aggregator, etc
+
+
+// Deal with Error reporting
+
+if (strpos($_SERVER['SERVER_NAME'],"cetis.ac.uk")!==FALSE){
+	
+	// WHEN RUNNING FROM A REAL WEBSERVER
+	// Do not display errors etc
+	
+    error_reporting(E_ALL);
+    ini_Set("display_errors",false); 
+    $testmode=false;
+    $db_test=false;
+
+} else {
+
+	// WHEN RUNNING LOCALLY
+	error_reporting(E_ALL);
+	ini_Set("display_errors",true); 
+	$testmode=false; // Logs in as a fake user
+	$db_test=false; // Displays extra databse messages
+
+}
+
+// THE FOLLOWING is a fudge - 
+// if we are being called from the CLI it needs to pretend to be logged in
+
+if (php_sapi_name()=="cli"){
+	$climode=TRUE;
+	$testmode=true;
+}
+
+// Deal with paths and the lib directory - taken from sam's standard set of routines for this
+
+
+$env_libdir=dirname(__FILE__); // The lib directory of the site in which this file resides
+$env_peardir=$env_libdir."/pear/PEAR";
+
+set_include_path(get_include_path().PATH_SEPARATOR.$env_libdir.PATH_SEPARATOR.$env_peardir); // add the directory to the include path
+
+
+$env_basedir=substr($env_libdir,0,-3); // strip off the last three chars "lib" for the basedir
+
+
+$env_subdir=substr($env_basedir,strlen($_SERVER['DOCUMENT_ROOT'])); // Determine the subdirectory from the docroot
+
+
+$env_subdir=str_replace("\\","/",$env_subdir);
+$env_subdir=trim($env_subdir,"/");
+
+if ($env_subdir!=""){
+	$env_subdir="/".$env_subdir;
+}
+
+
+// Determine the base url
+//$env_baseurl='http'.(isset($_SERVER['HTTPS'])?$_SERVER['HTTPS']=='on'?'s':'':'');
+$env_baseurl='http://'.$_SERVER['HTTP_HOST'];
+
+//$env_baseurl="http://prod.cetis.ac.uk";
+
+
+$env_fullself=$env_baseurl.rtrim($_SERVER["REQUEST_URI"],"/");
+$env_scriptname=$env_baseurl.rtrim($_SERVER["SCRIPT_NAME"],"/");
+
+// And append our working subdirectory
+// may also be worth checking for multiple slashes in the subdir - if we are several directories deep!
+if ($env_subdir!="") {
+	$dir=trim($env_subdir,'\,/');
+	 $env_baseurl.="/$dir";
+}
+
+
+$env_self=$_SERVER['SCRIPT_NAME'];
+
+
+// SMARTY ---------
+require_once 'externals/smarty/Smarty.class.php';
+$smarty=new smarty;
+
+$smarty->plugins_dir=array('plugins',//thedefaultunderSMARTY_DIR
+'smarty-plugins'
+);
+
+// SimplePIE
+require_once 'externals/simplepie/simplepie.inc';
+
+$smarty->template_dir=$env_basedir."templates";
+$smarty->compile_dir=$env_basedir."templates_c";
+
+$smarty->compile_check = true;
+//$smarty->debugging = true;
+
+$smarty->assign("env_basedir",$env_basedir);
+$smarty->assign("env_subdir",$env_subdir);
+$smarty->assign("env_baseurl",$env_baseurl);
+$smarty->assign("env_self",$env_self);
+$smarty->assign("env_fullself",$env_fullself);
+$smarty->assign("env_scriptname",$env_scriptname);
+$smarty->assign("env_getrequest",$_GET);
+
+// DATABASE -----------
+
+require_once 'db.php';
+$db=new db;
+
+
+// USER CONTEXT --------
+
+require_once 'user.class.php';
+$user=new user;
+$smarty->assign("user",$user);
+
+// OTHER CLASSES
+require_once 'project.class.php';
+require_once 'properties.class.php';
+require_once 'feedcache.class.php';
+require_once 'comment.class.php';
+require_once 'activity.class.php';
+require_once 'project_relationships.class.php';
+require_once 'person.class.php';
+require_once 'dates.class.php';
+require_once 'organisation.class.php';
+
+// Modules....
+
+$modules=array();
+
+
+// This is the base stub class for modules...
+
+class module{
+	
+	
+	function module(){
+	}
+	
+	function cron(){
+	}
+
+}
+
+
+// Load the modules in the modules subdirectory
+if (!isset($islocal)){
+$mod_dir_name=$env_libdir."/modules";
+$mod_dir=dir($mod_dir_name);
+while(false!==($entry=$mod_dir->read())){
+	$extpos=strpos($entry,".php");
+	
+	if ($extpos!==FALSE){
+		$modname=substr($entry,0,-4);
+		require_once($mod_dir_name."/".$entry);
+		$modules[$modname]=new $modname;
+	}
+}
+$mod_dir->close();
+}
+
+//Load RDF templates
+// Load the modules in the modules subdirectory
+
+$mod_dir_name=$env_basedir."/templates/rdf/terms";
+$mod_dir=dir($mod_dir_name);
+while(false!==($entry=$mod_dir->read())){
+	$extpos=strpos($entry,".tpl");
+	if ($extpos!==FALSE){
+		$tempname=substr($entry,0,-4);
+		$templates[]= $tempname;
+	}
+}
+$mod_dir->close();
+
+//check if content type is RDF
+//application/rdf+xml
+$rdf_header = false;
+if (preg_match('/application\/rdf\+xml(;q=(\d+\.\d+))?/i', $_SERVER['HTTP_ACCEPT'], $matches)) {
+	$rdf_header = true;
+}
+
+
+
+// VARIOUS SILLY LITTLE FUNCTIONS
+
+function logit($string){
+	global $testmode,$climode;
+	
+	error_log($string);
+
+}
+
+
+
+?>

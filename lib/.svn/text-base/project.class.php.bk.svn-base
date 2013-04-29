@@ -1,0 +1,548 @@
+<?php
+
+
+class project_manager{
+	var $projects=array();
+	
+	function getprojectlist($limit=null,$order=null,$dir="ASC"){
+	
+		// Returns a full set of all the projects in the system
+		// as an array of objects naturally
+		
+		global $db;
+		
+		$sql="SELECT id FROM projects ";
+		if ($limit!=null AND is_numeric($limit)){
+			$sql.=" LIMIT $limit ";
+		}
+		
+		if ($dir<>"ASC" AND $dir<>"DESC"){
+			$dir="ASC";
+		}
+
+		if (!is_null($order)){
+		switch ($order){
+			case "id":
+				$sql.=" ORDER BY id $dir";
+				break;
+			case "shortname":
+				$sql.=" ORDER BY shortname $dir";
+				break;
+			case "title":
+				$sql.=" ORDER BY title $dir";
+				break;
+			case "funding_start":
+				$sql="SELECT project_id as id FROM properties
+					  JOIN terms ON properties.term_id = terms.id WHERE terms.term='funding-start' ORDER BY data DESC";
+				break;
+			case "funding_end":
+				$sql="SELECT project_id as id FROM properties
+					  JOIN terms ON properties.term_id = terms.id WHERE terms.term='funding-end' ORDER BY data DESC";
+				break;
+			}
+		}
+		
+		$projects=$this->getbysql($sql);
+		//print_r($projects);
+		return $projects;
+		
+	}
+	
+	
+	function getprojectlist_current($limit,$order,$filter){
+
+		$timeperiod="130";
+		if (!is_null($timeperiod)){
+			$starttime=new DateTime();
+			
+			$starttime->modify("-$timeperiod day");
+			$starttime=$starttime->format("Y-m-d h:i:s");
+			
+			$endtime=new DateTime();
+			$endtime=$endtime->format("Y-m-d h:i:s");
+		}
+		
+		$current=true;
+
+
+		$sql="SELECT starters.project_id AS id, starters.start, enders.end, shortname, acts.activitylevel
+			FROM (SELECT project_id, `data` AS `start`
+					FROM `properties`
+					WHERE term_id='35')
+				AS starters
+				
+			JOIN (SELECT project_id, `data` AS `end`
+					FROM `properties`
+					WHERE term_id='36')
+				AS enders
+				ON starters.project_id=enders.project_id
+
+			
+			JOIN projects
+			ON starters.project_id=projects.id
+
+LEFT JOIN (SELECT count(*) AS activitylevel, project_id, time FROM activity 
+WHERE time > '$starttime' AND time < '$endtime' GROUP BY project_id
+) AS acts
+ON acts.project_id=projects.id
+";
+
+if ($current===true){
+	$sql.="		WHERE starters.start<NOW() AND enders.end>NOW() ";
+}	
+
+
+
+switch ($order){
+	case "alpha":
+		$sql.="ORDER BY title ASC";
+		break;
+	case "activity":
+		$sql.="ORDER BY activitylevel DESC";
+		break;
+	case "end":
+		$sql.="ORDER BY enders.end DESC, shortname ASC";
+		break;
+	case "start":
+		$sql.="ORDER BY starters.start DESC, shortname ASC";
+		break;
+	}
+			if ($limit!=null AND is_numeric($limit)){
+			$sql.=" LIMIT $limit ";
+		}
+		
+
+		$projects=$this->getbysql($sql);
+		
+		// That will get all the projects in progress at the moment...
+		// If there is nothing then we might get recently completed ones
+		if (count($projects)==0){
+			$sql="SELECT * FROM projects ORDER BY end DESC LIMIT 10";
+			$projects=$this->getbysql($sql);
+		}
+				
+		return $projects;
+		
+	}
+	
+	function getby_shortname($shortname){
+		$sql="SELECT id FROM projects WHERE shortname='$shortname'";
+		$projects=$this->getbysql($sql);
+		
+		// Only return something if we have found ONE project...
+		if (is_array($projects) AND count($projects)==1){
+			$project=$projects[0];
+			return $project;
+		} else {
+			return FALSE;
+		}
+	
+	}
+	
+	function search($searchstr){
+	$searchstr=addslashes($searchstr);
+		
+		$sql="SELECT projects.id AS id FROM projects JOIN properties
+			ON projects.id=properties.project_id
+			WHERE (projects.shortname LIKE '%$searchstr%'
+			OR projects.title LIKE '%$searchstr%'
+
+			OR projects.description LIKE '%$searchstr%'
+
+			OR properties.data LIKE '%$searchstr%'
+)
+			GROUP BY projects.id
+			";
+			
+
+		return $this->getbysql($sql);
+	}
+	
+	function search_byname($searchstr,$partial=FALSE){
+		$searchstr=addslashes($searchstr);
+		
+			$sql="SELECT id FROM projects
+			WHERE shortname LIKE '%$searchstr%'
+			OR title LIKE '%$searchstr%'
+			ORDER BY shortname ASC
+			";
+			
+		if ($partial){
+			$sql="SELECT id FROM projects
+			WHERE shortname LIKE '%$searchstr%'
+			OR LOCATE(shortname,'$searchstr')>0
+			OR title LIKE '%$searchstr%'
+			OR LOCATE(title,'$searchstr')>0
+			ORDER BY shortname ASC
+			";
+		}
+			
+		return $this->getbysql($sql);
+	
+	}
+	
+	function search_byproperty($term,$searchstr=null){
+		$sql="SELECT properties.project_id AS id FROM properties, terms
+			WHERE properties.term_id = terms.id
+			AND terms.term LIKE '$term' ";
+		
+
+		
+		if (!is_null($searchstr)){
+			$sql.="AND properties.data LIKE '%$searchstr%' ";
+		}
+		$sql.="	GROUP BY id 
+			";
+			
+		
+		
+		//	print "<pre>\n$sql\n</pre>";
+		return $this->getbysql($sql);
+	
+	}
+	
+	//This is returning nothing on AND
+	function query($query,$mode="OR",$querymethod="projects",$fundedonly=FALSE,$limit=FALSE){
+	global $db;
+	
+		
+		/* OR'ed queries */
+
+	if ($mode=="OR" or  count($query) == 1){
+		foreach ($query as $term=>$value){
+			$sql="SELECT properties.project_id AS id FROM properties, terms ";
+			$sql.="WHERE properties.term_id = terms.id AND ";
+			$sql.=" (terms.term LIKE '$term' AND properties.data LIKE '$value') ";
+				$sql.=" OR ";
+			
+		}
+		
+		$sql=rtrim($sql,"ANDOR ");
+		$sql.="	GROUP BY id ";
+		
+	
+		
+		$projects=$this->getbysql($sql);
+
+		
+		/* AND'ed queries */
+			
+	} elseif ($mode=="AND"){
+		
+		foreach ($query as $term=>$value){
+			$sql="SELECT properties.project_id AS id FROM properties, terms ";
+			$sql.="WHERE properties.term_id = terms.id AND ";
+			$sql.=" (terms.term LIKE '$term' AND properties.data LIKE '$value') ";
+			$sql=rtrim($sql,"ANDOR ");
+			$sql.="	GROUP BY id ";		
+			
+			$data[$term]=$db->queryarray($sql);		
+		}
+	
+		
+		foreach($data as $termarr){
+			foreach($termarr as $id){ 
+			$num[] = $id['id'];
+			}
+		}
+			
+	
+		$duplicates = array_count_values($num);
+			foreach($duplicates as $key => $value){
+				if($value > 1){
+                $matches[]['id'] = $key;
+				}
+			}
+                
+		$data = $matches;
+	
+		$projects=array();
+		if (is_array($data)){
+			foreach ($data as $thisproj){
+				$projects[]=new project($thisproj['id']);
+			}
+		}
+		
+	
+	}
+	
+
+	//this code temperaly fixes the nonset problem... but the code is disgusting and needs sorting :(  
+		$set=array();$all=array();
+		$sql="SELECT id FROM projects ORDER BY id ";
+		$allarr=$db->queryarray($sql); foreach ($allarr as $allsin){$all[] = $allsin['id']; };
+		
+		
+		foreach ($query as $term=>$value){
+			if ($value=='notset'){
+				$sql="SELECT properties.project_id AS id FROM properties WHERE EXISTS (SELECT * from terms WHERE terms.id = properties.term_id AND (terms.term LIKE '$term') GROUP BY id )";	
+				$setarr=$db->queryarray($sql); foreach ($setarr as $setsin){$set[] = $setsin['id']; };
+				$notset = array_diff($all, $set);			
+				$notset = array_unique($notset);
+				if (is_array($notset)){
+					foreach ($notset as $thisproj){
+						$projects[]=new project($thisproj);
+					}
+				}
+			}
+		}
+	//end of yuck code
+	
+	
+
+		//print_r($projects);
+		
+		// Fish out just the funded ones if necessary
+		
+		if ($fundedonly===TRUE){
+			$outarr=array();
+			foreach ($projects as $project){
+				if ($project->is_funded()){
+					$outarr[]=$project;
+				}
+			}
+			$projects=$outarr;
+		
+		}
+		
+		
+		// If we are having an activity feed rather than project list...
+		
+		if ($querymethod=="activity"){
+			$activity=array();
+			foreach ($projects as $project){
+				$projacts=$project->activities->get_activities(null,false,true);
+				
+				if ($projacts){
+
+					$activity=array_merge($activity,$projacts);
+				}
+			}
+			
+			
+			// Sort the results by date
+			
+			
+			$sortedactivity=array();
+			
+			foreach ($activity as $thisact){
+				$timestamp=strtotime($thisact->time);
+				$sortedactivity[$timestamp]=$thisact;
+			}
+			
+			krsort($sortedactivity,SORT_NUMERIC);
+			
+			//And chop it off at the limit...
+			
+			if ($limit!==FALSE){
+				$sortedactivity=array_slice($sortedactivity,0,$limit);
+			}
+			
+			return $sortedactivity;
+			
+		} else {
+		
+			// Otherwise simply return the array of projects
+			return $projects;
+		}
+		
+		
+	
+	}
+	
+	
+	function getbysql($sql){
+		global $db;
+		$projects=array();
+		
+		$data=$db->queryarray($sql);
+		//print_r ($data);
+		if (is_array($data)){
+			foreach ($data as $thisproj){
+				$projects[]=new project($thisproj['id']);
+			}
+		}
+		
+		return $projects;
+	}
+	
+	
+	
+
+}
+
+class project extends database_record{
+
+	
+	var $properties;
+	var $activities;
+	var $relationships;
+	var $links=array();
+	
+//	var $comments=array();
+//	var $tags=array();
+	
+	
+	function project($idorname=null){
+		global $db;
+		
+		$id=null;
+		
+		// If we have been given a number, it will be an ID won't it
+		if (is_numeric($idorname)){
+			$id=$idorname;
+			
+		// If it is a string we will look ourselves up...
+		} elseif (is_string($idorname)) {
+			$sql="SELECT id FROM projects WHERE shortname='$idorname'";
+			$data=$db->queryarray($sql);
+			
+			if (isset($data[0]['id'])){
+				$id=$data[0]['id'];
+			} else {
+				// If no record exists - but we have been given a shortname - we kinda assume that we are making a record
+				// but don't actually save ourselves...
+				$this->shortname=$idorname;
+			}
+		}
+		
+		$this->database_record($id,"projects");
+		
+		if ($id != null){
+			$this->properties=new properties($id);
+			$this->activities=new activities($id);
+			$this->comments=new comments($id);
+			$this->relationships=new project_relationships($id);
+			$this->dates=new dates($id);
+		}
+		
+		
+	}
+	
+	function savetodb(){
+		global $user;
+		
+		if ($this->id==null){
+			$newrec=TRUE;
+		} else {
+			$newrec=FALSE;
+		}
+	
+		// Pass back to the main
+	
+	
+		database_record::savetodb();
+		if ($this->id != null){
+			$this->properties=new properties($this->id);
+			$this->activities=new activities($this->id);
+			$this->comments=new comments($this->id);
+			if ($newrec){
+				$activity=new activity();
+				$updatestr="New project added by ".$user->name;
+				$activity->logevent($this->id,6,$updatestr,null,null,null);
+			}
+			
+		}
+	}
+	
+	function setattribute($term,$data){
+		// Should be some validation here...
+		
+		$this->$term=$data;
+		$this->savetodb();
+		
+	}
+	
+	function getattribute($term){
+		// if the term exists - return it
+		if (isset($this->$term)){		
+			return $this->$term;
+		} else {
+			return FALSE;
+		}
+	
+	}
+	
+	
+	function destroy(){
+		// This will actually destroy the database record
+		// and all the properties and activities associated with the project...
+		
+		$this->properties->destroy();
+		$this->activities->destroy();
+		$this->comments->destroy();
+		$this->relationships->destroy();
+		
+		database_record::destroy();
+	}
+	
+	/* Remove this bit... */
+	
+	function get_recentactivity($limit){
+		
+		$recentactivity=$this->activities->get_activities($limit);
+		return $recentactivity;
+	}
+	
+	function get_activitycount($numberofdays=null){
+		$activitycount=$this->activities->get_activitycount($numberofdays);
+		return $activitycount;
+	}
+	
+	/*-------------*/
+	
+	
+	function is_funded(){
+		$start=strtotime($this->properties->get_property("funding-start",TRUE));
+		$end=strtotime($this->properties->get_property("funding-end",TRUE));
+		//print "START: $start - END: $end";
+		if (is_numeric($start) AND is_numeric($end)){
+			if ($start<date("U") AND $end>date("U")){
+				return TRUE;
+			}
+		
+		}
+		return FALSE;
+		
+	}
+	
+	function getLifecycle($scaleup=1){
+		
+		// Returns a float of how far through the funding the project is...
+		$start=strtotime($this->properties->get_property("funding-start",TRUE));
+		$end=strtotime($this->properties->get_property("funding-end",TRUE));
+		$now=date("U");
+		
+		if ($start<$now AND $end>$now){
+			$life=((date("U")-$start)/($end-$start))*$scaleup;
+		} elseif ($start>$now){
+			$life=0;
+		} elseif ($end<$now){
+			$life=1*$scaleup;
+		}
+
+		return $life;
+	}
+	
+	function exportJSON(){
+		$toencode=array();
+		$toencode['project_id']=$this->id;
+		//$toencode['name']=$this->title;
+		//$toencode['shortname']=$this->shortname;
+		
+		$propsparsed=array();
+		$props=$this->properties->get_properties();
+		foreach ($props as $thisprop){
+			$propsparsed=array_merge($propsparsed,array($thisprop->term=>$thisprop->data));
+		}
+		
+		$toencode['properties']=$propsparsed;
+		
+		
+		$jsonout=json_encode($toencode);
+		return $jsonout;
+	}
+}
+
+
+?>

@@ -1,0 +1,362 @@
+<?php
+
+
+class activities extends database_collection{
+
+	var $project_id;
+	
+	function activities($project_id=null){
+		$this->database_collection("activity","activity");
+		$this->project_id=$project_id;
+	}
+	
+	function log_activity($module,$details,$uri=null,$time=null,$guid=null){
+		if (!is_null($this->project_id)){
+		$activity=new activity();
+		$activity->logevent($this->project_id,$module_id,$details,$uri,$time,$guid);
+		}
+	}
+	
+	function get_activitycount($timeperiod=null){
+		global $db;
+		// Returns a indication of the level of activity in $timeperiod (days)
+		
+		if (!is_null($timeperiod)){
+			$starttime=new DateTime();
+			
+			$starttime->modify("-$timeperiod day");
+			$starttime=$starttime->format("Y-m-d H:i:s");
+			
+			$endtime=new DateTime();
+			$endtime=$endtime->format("Y-m-d H:i:s");
+		}
+		
+		$sql="SELECT count(*) AS count FROM activity ";
+
+		$wheredone=FALSE;
+
+		if (!is_null($timeperiod)){
+			$sql.="WHERE time > '$starttime' AND time < '$endtime' ";
+			$wheredone=TRUE;
+		}
+		
+		if (!is_null($this->project_id)){
+			if ($wheredone){
+				$sql.=" AND ";
+			} else {
+				$sql.=" WHERE ";
+				$wheredone=TRUE;
+			}
+			
+			$sql.=" project_id='".$this->project_id."' ";
+		}
+		
+		
+		
+		$dbres=$db->queryarray($sql);
+		if (isset($dbres[0])){
+			//print_r($dbres);
+			return $dbres[0]['count'];
+		} else {
+			return FALSE;
+		}
+		
+	}
+	
+	function calculate_percentile($timeperiod){
+		
+		// This is all a bit shady...
+		
+		if (!is_null($timeperiod)){
+			$starttime=new DateTime();
+			
+			$starttime->modify("-$timeperiod day");
+			$starttime=$starttime->format("Y-m-d H:i:s");
+			
+			$endtime=new DateTime();
+			$endtime=$endtime->format("Y-m-d H:i:s");
+		}
+		
+		
+	$sql="SELECT count(*) AS activitylevel, project_id FROM activity 
+WHERE time > '$starttime' AND time < '$endtime' GROUP BY project_id ORDER BY activitylevel ASC";
+	
+	global $db;
+		$activitycounts=$db->queryarray($sql);
+
+
+//		$activitycounts=$this->get_activitycount($timeperiod);
+		$scores=array();
+		foreach ($activitycounts as $thisscore){
+			$scores[$thisscore['project_id']]=$thisscore['activitylevel'];
+		}
+		
+		$prs=array();
+		
+		$count=count($scores);
+		
+		$n=0;
+		foreach($scores as $pid=>$score){
+			$n++;
+			$prs[$pid]=floor((100/$count)*($n-0.5));
+		}
+	
+		if (isset($this->project_id) AND isset($prs[$this->project_id])){
+			return $prs[$this->project_id];
+		} else {
+	
+		return $prs;
+		}
+	}
+	
+	function calculate_sd($timeperiod){
+	
+			if (!is_null($timeperiod)){
+			$starttime=new DateTime();
+			
+			$starttime->modify("-$timeperiod day");
+			$starttime=$starttime->format("Y-m-d H:i:s");
+			
+			$endtime=new DateTime();
+			$endtime=$endtime->format("Y-m-d H:i:s");
+		}
+		
+		
+	$sql="SELECT count(*) AS activitylevel, project_id FROM activity 
+WHERE time > '$starttime' AND time < '$endtime' GROUP BY project_id ORDER BY activitylevel ASC";
+	
+	global $db;
+		$activitycounts=$db->queryarray($sql);
+		
+		print "<h3>SCORES</h3>";
+		print_r($scores);
+		
+		print "\n\n\n";
+		
+		$y=$this->mean($scores);
+		print "Mean score: $y\n";
+		
+		$variance=array();
+		foreach($scores as $n=>$score){
+			$variance[$n]=pow($score-$y,2);
+		}
+		
+		print "<h3>Variances</h3>";
+		print_r($variance);
+		
+		$meanvariance=$this->mean($variance);
+		print "Mean variance: $meanvariance\n";
+		
+		
+		$sd=sqrt($meanvariance);
+		print "Standard Deviation: $sd\n----------\n";
+		
+		
+	
+
+		
+		print "</pre>";
+	}
+	
+	function mean($values){
+	
+		$mean=array_sum($values)/count($values);
+		return $mean;
+		
+	}
+	
+	function get_activities($limit=null,$perproject=FALSE,$includeprojects=FALSE,$includeignored=FALSE){
+		// Gets the activity log ordered by most recent - up to $limit
+		global $db;
+		
+		$sql="SELECT id FROM activity ";
+		if (!is_null($this->project_id)){
+			$sql.="WHERE project_id='".$this->project_id."' ";
+			if ($includeignored===FALSE){
+				$sql.="AND `ignore`='0' ";
+			}
+		} else {
+		
+			if ($includeignored===FALSE){
+				$sql.="WHERE `ignore`='0' ";
+			}
+		}
+		
+		
+		
+		$sql.="ORDER BY time DESC ";
+	
+		if ($limit!=null AND is_numeric($limit)){
+			$sql.=" LIMIT $limit";
+		}
+		
+		$activities=$this->get_bysql($sql);
+			//	print_r($activities);
+		
+		
+		// If we are limiting by n items per project, filter out what we don't want...
+		
+		if (is_numeric($perproject)){
+			$actsout=array();
+			$projused=array();
+			if (is_array($activities)){
+			foreach ($activities as $thisact){
+				if (!in_array($thisact->project_id,$projused)){
+					$actsout[]=$thisact;
+					$projused[]=$thisact->project_id;
+				}
+			}
+				$activities=$actsout;
+			} else {
+				$activities=array();
+			}
+		}
+		
+		
+		
+		// Slice em off after limit has been reached...
+		if ($limit!=null AND is_numeric($limit) AND is_array($activities)){
+			$activities=array_slice($activities,0,$limit);
+		}
+		
+		
+		if ($includeprojects===TRUE){
+			if ($activities){
+			foreach ($activities as $thisact){
+				$attachproj=$thisact->project_id;
+				$thisact->project=new project($attachproj);
+			}
+			}
+		}
+		return $activities;
+		
+	}
+	
+	function get_byguid($guid){
+		
+		// Gets the activity log ordered by most recent - up to $limit
+		global $db;
+		
+		$sql="SELECT id FROM activity
+		WHERE guid='$guid'
+		";
+		
+		$activities=$this->get_bysql($sql);
+		
+		return $activities;
+	}
+	
+	function destroy(){
+		// OMG it deletes all the records in the collection!
+		// But only if we have got an associated project...
+		
+		if (!is_null($this->project_id)){
+			
+			// get all the activity including ignored stuff...
+			
+			$acts=$this->get_activities(null,FALSE,FALSE,TRUE);
+			if (is_array($acts)){
+				foreach ($acts as $activity){
+					$activity->destroy();
+				}
+			}
+		}
+	}
+	
+}
+
+class activity extends database_record{
+
+	
+	
+	function activity($id=null){
+
+		$this->database_record($id,"activity");
+		
+	}
+	
+	function logevent($project_id,$module_id,$details,$uri=null,$time=null,$guid=null){
+	
+		global $env_baseurl;
+		
+		logit( "Logging a new event: $project_id,$module_id,$details,$uri,$time,$guid<br/>");
+		
+		
+	
+		$this->project_id=$project_id;
+		$this->module_id=$module_id;
+		$this->details=$details;
+		
+		// If no URL is given default to the project page in PROD...
+		if (is_null($uri)){
+			$this->uri=$env_baseurl."/projects/".$project_id;
+		} else {
+			$this->uri=$uri;
+		}
+		
+		if (is_null($time)){
+			$this->time=date("Y-m-d H:i:s");
+		} else {
+			$this->time=date("Y-m-d H:i:s",strtotime($time));
+		}
+		$this->guid=$guid;
+		$this->savetodb();
+	 
+	
+	}
+	
+	function hide(){
+		$this->ignore=1;
+		$this->savetodb();
+	}
+	
+	function show(){
+		$this->ignore=0;
+		$this->savetodb();
+	}
+	
+	function timefromnow($time=null){
+		if (is_null($time)){
+			$time=$this->time;
+		}
+	
+		if (!is_numeric($time)){
+			$time=date("U",strtotime($time));
+		}
+			$difference=time()-$time;
+			
+			
+			if ($difference<(60*60)){
+				//Minutes ago
+				$timepassed=floor($difference/(60));
+				$timebase="minute";
+			} elseif ($difference<(60*60*24)){
+				//Hours ago
+				$timepassed=floor($difference/(60*60));
+				$timebase="hour";
+			} elseif ($difference<(60*60*24*30)){
+				//Days ago	
+				$timepassed=floor($difference/(60*60*24));
+				$timebase="day";
+			} elseif ($difference<(60*60*24*365)){
+				//Months ago
+				$timepassed=floor($difference/(60*60*24*30));
+				$timebase="month";
+			}
+			
+			if ($timepassed!=1){
+				$timebase=$timebase."s";
+			}
+			
+			$resultstring="$timepassed $timebase ago";
+			if ($difference<=0){
+				$resultstring="in the future...";
+			}
+			
+			return $resultstring;
+	}
+	
+}
+
+
+?>

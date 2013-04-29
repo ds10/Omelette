@@ -1,0 +1,30 @@
+<?php
+
+class feedcache{
+
+	function getfeedlist(){
+		global $db;
+		$sql="SELECT * FROM links, projects WHERE rel='feed' AND projects.id=links.project_id";
+		$result=$db->queryarray($sql);
+		return $result;
+	}
+	
+	function updatefeed($id){
+	
+	
+	}
+	
+	function updateall(){
+	
+	}
+
+	function getarticles_recent($n){
+		global $db;
+		$sql="SELECT * FROM articles ORDER BY created DESC LIMIT $n";
+		$result=$db->queryarray($sql);
+		return $result;
+	}
+
+}
+
+?>

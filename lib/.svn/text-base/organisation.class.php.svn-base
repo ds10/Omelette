@@ -1,0 +1,40 @@
+<?php
+
+
+class organisations extends database_collection{
+	
+	function organisations(){
+		$this->database_collection("organisations","organisation");
+	}
+
+}
+
+class organisation extends database_record{
+
+	var $db_table="organisations";
+
+	var $id; //unique
+	var $name;
+	var $ukprn;
+	var $ucascode;
+	var $postcode;
+	var $geoLat;
+	var $geoLong;
+	
+	function organisation($id=null){
+		$this->database_record($id,$this->db_table);
+	}
+	
+	
+	function findUKPRN(){
+
+	}
+	
+	function findUCAScode(){
+	
+	}
+	
+}
+
+
+?>

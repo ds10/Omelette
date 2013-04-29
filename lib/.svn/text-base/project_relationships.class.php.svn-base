@@ -1,0 +1,134 @@
+<?php
+
+
+class project_relationships extends database_collection{
+
+	var $project_id;
+	
+	function project_relationships($project_id){
+		$this->project_id=$project_id;	
+		$this->database_collection("project_relationships","project_relationship");
+	}
+	
+	function getrelationshipsforproject($type=null,$dir=null){
+		
+		$project_id=$this->project_id;
+		$sql="SELECT id FROM project_relationships WHERE ";
+		
+		if (is_null($dir)){
+			$sql.="(source_id='$project_id' OR target_id='$project_id') ";
+		} else {
+			if ($dir=="fw"){
+				$sql.="(source_id='$project_id') ";
+			} else {
+				$sql.="(target_id='$project_id') ";
+			}
+		}
+		
+		
+		if (!is_null($type)){
+			$sql.=" AND rel='$type'";
+		}
+		$rels=($this->get_bysql($sql));
+		
+		return $rels;
+	}
+	
+	function destroy(){
+		$relationships=$this->getrelationshipsforproject();
+		if ($relationships!==FALSE){
+		foreach ($relationships as $thisrel){
+			$thisrel->destroy();
+		}
+		}
+	}
+	
+	
+
+}
+
+class project_relationship extends database_record{
+	
+	function project_relationship($id=null){
+		$this->database_record($id,"project_relationships");	
+	}
+	
+	function setuprel($source,$target,$rel,$comment=null){
+	   if (substr($rel,-4)=="-rev"){
+	       $this->rel=substr($rel,0,-4);
+	       $this->source_id=$target;
+	       $this->target_id=$source;
+	       $this->comments=$comment;
+	       
+     
+	   }    else {
+		    $this->source_id=$source;
+            $this->target_id=$target;
+            $this->rel=$rel;
+            $this->comments=$comment;
+            
+
+	   } 
+
+     //   print "s".$this->source_id." t".$this->target_id." r".$this->rel;
+	   $this->savetodb();
+	}
+	
+	
+	function getcounterpart($viewer_id){
+		if ($viewer_id==$this->source_id){
+			$counterpart=$this->target_id;
+		} else {
+			$counterpart=$this->source_id;
+		}
+		$retproject=new project($counterpart);
+		return $retproject;
+	}
+	
+	function getlinktype($viewer_id){
+	
+		
+		switch ($this->rel){
+				case "builds": 
+					$forward="Builds on";
+					$back="Was built on by";
+					break;
+				case "cont":
+					$forward="Is a continuation of";
+					$back="Was continued as";
+					break;
+				default:
+					$forward="See also";
+					$back="See also";
+					break;
+			}
+		
+		if ($viewer_id==$this->source_id){
+			$linktype=$forward;
+		} else {
+			$linktype=$back;
+		}
+	
+		return $linktype;
+	}
+	
+	/*
+	function getprocomment($id){
+		global $db;
+	
+	
+	$sql="SELECT * FROM projects
+	WHERE shortname = '$ourproject'
+	LIMIT 1";
+	
+	$projectdata=$db->queryarray($sql);
+	
+	return $result;
+	
+	}
+	*/
+	
+}
+
+
+?>

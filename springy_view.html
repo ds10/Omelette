@@ -1,0 +1,78 @@
+<html>
+<body>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+<script src="lib/js/springy.js"></script>
+<script src="lib/js/springyui.js"></script>
+
+
+<script>
+
+$.ajaxSetup({ cache: false });
+
+$.ajax({
+	  url: 'http://localhost/omlette/lib/backend_graphspringy.php',
+	  dataType: 'json',
+	  cache: false,
+	  data: {},
+	  success: function(data, textStatus) {
+		   publish(data);
+	  },
+	 
+	});
+
+
+
+function publish(data){
+  var graph = new Springy.Graph();
+  graph.loadJSON(data);
+
+  var springy = jQuery('#springydemo').springy({
+    graph: graph
+  });
+  
+ setInterval( function(){
+	 
+	 $.ajax({
+		  url: 'http://localhost/omlette/lib/backend_graphspringy.php',
+		  dataType: 'json',
+		  cache: false,
+		  newdata: {},
+		  success: function(newdata, textStatus) {
+			  
+			
+			  
+			if (arraysEqual(data.edges, newdata.edges) == false){
+				location.reload()
+			}
+					
+			if (arraysEqual(data.nodes, newdata.nodes) == false){ 
+				location.reload()				
+			}
+		  },
+		 
+		});
+	 
+	 
+        
+	}
+ 	, 5000 );
+  
+};
+
+function arraysEqual(arr1, arr2) {
+
+	
+	if(arr1.length !== arr2.length)
+        return false;
+   
+
+    return true;
+}
+
+</script>
+
+<canvas id="springydemo" width="640" height="480" />
+
+
+</body>
+</html>

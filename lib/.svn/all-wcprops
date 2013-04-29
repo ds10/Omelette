@@ -1,0 +1,89 @@
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/svn/!svn/ver/4025/PROD/trunk/PHP/lib
+END
+activity.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/519/PROD/trunk/PHP/lib/activity.class.php
+END
+comment.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/362/PROD/trunk/PHP/lib/comment.class.php
+END
+msDocGenerator.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/327/PROD/trunk/PHP/lib/msDocGenerator.class.php
+END
+properties.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/4022/PROD/trunk/PHP/lib/properties.class.php
+END
+feedcache.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/26/PROD/trunk/PHP/lib/feedcache.class.php
+END
+db.php
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/244/PROD/trunk/PHP/lib/db.php
+END
+dates.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/267/PROD/trunk/PHP/lib/dates.class.php
+END
+person.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/186/PROD/trunk/PHP/lib/person.class.php
+END
+project_relationships.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/481/PROD/trunk/PHP/lib/project_relationships.class.php
+END
+init.php
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/4025/PROD/trunk/PHP/lib/init.php
+END
+project.class.php.bk
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/487/PROD/trunk/PHP/lib/project.class.php.bk
+END
+project.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/3992/PROD/trunk/PHP/lib/project.class.php
+END
+organisation.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/288/PROD/trunk/PHP/lib/organisation.class.php
+END
+user.class.php
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/224/PROD/trunk/PHP/lib/user.class.php
+END

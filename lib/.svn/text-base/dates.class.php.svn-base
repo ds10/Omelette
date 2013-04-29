@@ -1,0 +1,50 @@
+<?php
+
+class dates extends database_collection{
+
+
+	var $project_id;
+	
+	function dates($project_id=null){
+		
+		global $db;
+		//$this->database_collection("properties","properties");
+		$this->project_id=$project_id;
+		
+		
+		$sql="
+			SELECT properties.data
+			FROM properties JOIN terms ON properties.term_id = terms.id
+			WHERE terms.term='funding-start' AND project_id = " . $this->project_id .  " 
+			";
+		
+		$test=$db->queryarray($sql);
+		if ($test){
+		$this->funding_start=$test[0]['data'];
+		}
+		
+		$sql="
+			SELECT properties.data
+			FROM properties JOIN terms ON properties.term_id = terms.id
+			WHERE terms.term='funding-end' AND project_id = " . $this->project_id .  "
+			";
+		
+		$test2=$db->queryarray($sql);
+		if ($test2){
+		$this->funding_end=$test2[0]['data'];
+
+		}
+
+		
+		
+		
+		
+		
+			
+	}
+	
+
+		
+}
+
+?>
