@@ -49,7 +49,7 @@
 <script>
 
 $.ajax({
-	  url: 'http://localhost/omelette/lib/backend_circle.php',
+	  url: 'http://109.74.200.115/omelette/lib/backend_sanky.php',
 	  dataType: 'json',
 	  cache: false,
 	  data: {},
@@ -81,7 +81,7 @@ var sankey = d3.sankey()
 
 var path = sankey.link();
 
-d3.json("lib/backend_sanky.php", function(energy) {
+d3.json("http://109.74.200.115/omelette/lib/backend_sanky.php", function(energy) {
 
   sankey
       .nodes(energy.nodes)
@@ -141,18 +141,18 @@ function publish(data){
 setInterval( function(){
  
  $.ajax({
-	  url: 'http://localhost/omlette/lib/backend_circle.php',
+	  url: 'http://109.74.200.115/omelette/lib/backend_sanky.php',
 	  dataType: 'json',
 	  cache: false,
 	  newdata: {},
 	  success: function(newdata, textStatus) {
 
-			
-		if (arraysEqual(newdata.children, data.children) == false){
+		if (arraysEqual(newdata, data) == false){
+		
 			location.reload()
 		}
 				
-		console.log(data)
+	
 		
 	  },
 	 
@@ -166,10 +166,15 @@ setInterval( function(){
 };
 
 function arraysEqual(arr1, arr2) {
-    if(arr1.length !== arr2.length)
+
+	console.log(arr1)
+	console.log(arr2)
+	
+    if(arr1.links.length !== arr2.links.length)
         return false;
+    
     for(var i = arr1.length; i--;) {
-        if(arr1[i].children.length !== arr2[i].children.length)
+        if(arr1[i].length !== arr2[i].length)
 		  return false;
     }
 
