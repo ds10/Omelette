@@ -5,7 +5,7 @@ class db {
     var $databasehandle;
     var $dbhost='localhost';
     var $dbuser='Monkeybar';
-    var $dbpass='franklymrshanklythispositioniminitpaysmywaybutitdestroysmysoul';
+    var $dbpass='test2';
     var $dbname='omelette';
     
     function db($dbname=null){
