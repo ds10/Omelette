@@ -4,8 +4,8 @@ class db {
 
     var $databasehandle;
     var $dbhost='localhost';
-    var $dbuser='omelette';
-    var $dbpass='omelette';
+    var $dbuser='Monkeybar';
+    var $dbpass='franklymrshanklythispositioniminitpaysmywaybutitdestroysmysoul';
     var $dbname='omelette';
     
     function db($dbname=null){
