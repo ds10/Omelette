@@ -134,6 +134,19 @@ class property_manager{
 		return $data;
 	}
 	
+	
+	/* backup the db OR just a table */
+	function backup_tables()
+	{
+	
+		$filename='database_backup_'.date('G_a_m_d_y').'.sql';
+		$result=exec('mysqldump omelette --password=gladdylight--user=root --single-transaction >/var/www/Omelette'.$filename,$output);
+		if($output==''){print "no output";}
+		else {print_r($output);}
+		
+		
+	}
+	
 }	
 
 
