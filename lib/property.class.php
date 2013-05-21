@@ -141,6 +141,7 @@ class property_manager{
 	
 		$filename='database_backup_'.date('G_a_m_d_y').'.sql';
 		$result=exec('mysqldump omelette --password=gladdylight--user=root --single-transaction >/var/www/Omelette'.$filename,$output);
+		print $result;
 		if($output==''){print "no output";}
 		else {print_r($output);}
 		
