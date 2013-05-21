@@ -139,7 +139,7 @@ class property_manager{
 	function backup_tables()
 	{
 	
-		$filename='database_backup_'.date('G_a_m_d_y').'.sql';
+		$filename='database_backup_'.date("Y-m-d H:i:s").'.sql';
 		print $filename;
 		//sudo mysqldump -uroot -pgladdylight omelette > test.sql
 		
