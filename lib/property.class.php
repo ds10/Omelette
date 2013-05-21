@@ -140,10 +140,10 @@ class property_manager{
 	{
 	
 		$filename='database_backup_'.date('G_a_m_d_y').'.sql';
-		
+		print $filename;
 		//sudo mysqldump -uroot -pgladdylight omelette > test.sql
 		
-		$result=exec('mysqldump -uroot -pgladdylight > /var/www/Omelette'.$filename,$output);
+		$result=exec('mysqldump -uroot -pgladdylight omelette > /var/www/Omelette/'.$filename,$output);
 		print $result;
 		if($output==''){print "no output";}
 		else {print_r($output);}
