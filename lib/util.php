@@ -49,10 +49,10 @@ function circlePackingJson($widgetresults){
 	$string = rtrim($string, ",");
 	$string .= "]}";
 	
-	$xmlfile = "bullets.json";
-	$fh = fopen($xmlfile, 'w') or die("can't open file");
-	fwrite($fh, $string);
-	fclose($fh);
+	//$xmlfile = "bullets.json";
+	//$fh = fopen($xmlfile, 'w') or die("can't open file");
+	//fwrite($fh, $string);
+	//fclose($fh);
 	
 	return $string;
 }

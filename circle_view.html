@@ -25,7 +25,7 @@ text {
 <script>
 
 $.ajax({
-	  url: 'http://localhost/omelette/lib/backend_circle.php',
+	  url: 'http://109.74.200.115/Omelette/lib/backend_circle.php',
 	  dataType: 'json',
 	  cache: false,
 	  data: {},
@@ -52,7 +52,7 @@ $.ajax({
 	    .attr("transform", "translate(2,2)");
 
 	
-	d3.json("http://localhost/omelette/lib/backend_circle.php", function(error, root) {
+	d3.json("http://109.74.200.115/Omelette/lib/backend_circle.php", function(error, root) {
 	  var node = svg.datum(root).selectAll(".node")
 	      .data(pack.nodes)
 	    .enter().append("g")
@@ -82,7 +82,7 @@ function publish(data){
 setInterval( function(){
  
  $.ajax({
-	  url: 'http://localhost/omlette/lib/backend_circle.php',
+	  url: 'http://109.74.200.115/Omelette/lib/backend_circle.php',
 	  dataType: 'json',
 	  cache: false,
 	  newdata: {},
