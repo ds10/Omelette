@@ -49,7 +49,7 @@
 <script>
 
 $.ajax({
-	  url: 'http://localhost/omelette/lib/backend_sanky.php',
+	  url: 'http://109.74.200.115/Omelette/lib/backend_sanky.php',
 	  dataType: 'json',
 	  cache: false,
 	  data: {},
@@ -71,7 +71,7 @@ var formatNumber = d3.format(",.0f"),
 var svg = d3.select("#chart").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
-  .append("g")
+    .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 var sankey = d3.sankey()
@@ -81,7 +81,7 @@ var sankey = d3.sankey()
 
 var path = sankey.link();
 
-d3.json("http://localhost/omelette/lib/backend_sanky.php", function(energy) {
+d3.json("http://109.74.200.115/Omelette/lib/backend_sanky.php", function(energy) {
 
   sankey
       .nodes(energy.nodes)
@@ -141,7 +141,7 @@ function publish(data){
 setInterval( function(){
  
  $.ajax({
-	  url: 'http://localhost/omelette/lib/backend_sanky.php',
+	  url: 'http://109.74.200.115/omelette/lib/backend_sanky.php',
 	  dataType: 'json',
 	  cache: false,
 	  newdata: {},
