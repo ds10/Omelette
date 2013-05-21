@@ -143,7 +143,7 @@ class property_manager{
 		print $filename;
 		//sudo mysqldump -uroot -pgladdylight omelette > test.sql
 		
-		$result=exec('mysqldump -uroot -pgladdylight omelette > /var/www/Omelette/backups'.$filename,$output);
+		$result=exec('mysqldump -uroot -pgladdylight omelette > /var/www/Omelette/backups/'.$filename,$output);
 		print $result;
 		if($output==''){print "no output";}
 		else {print_r($output);}
