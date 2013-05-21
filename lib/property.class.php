@@ -148,7 +148,7 @@ class property_manager{
 		if($output==''){print "no output";}
 		else {print_r($output);}
 		
-		$sql="TRUNCATE TABLE omelette;" ;
+		$sql="TRUNCATE TABLE properties	;" ;
 		
 		$properties=$this->simplesql($sql);
 		
