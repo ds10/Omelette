@@ -23,39 +23,6 @@ function writeSessionCSV ($sessionresults){
 }
 
 
-function circlePackingJson($widgetresults){
-	$propman = new property_manager();
-	$string = "{";
-	$string .= ' 
-			    "name": "omelette",
-			';
-	$string .= '"children": [ 
-			';
-	
-	foreach ($widgetresults as $widget => $dataArray){
-		$string .= " { \n";
-		$string .= ' "name": "'.$widget.'", 
-				';
-		$string .= ' "children": [ ';
-		foreach ($dataArray as $data){
-			$num=$propman->get_count('data',$data['data']);
-			$string .= '
-			{"name": "'.$data['data'].'", "size":'.$num.'},';	
-		}
-		$string = rtrim($string, ",");
-		$string .= "] \n";
-		$string .= "},";
-	}
-	$string = rtrim($string, ",");
-	$string .= "]}";
-	
-	//$xmlfile = "bullets.json";
-	//$fh = fopen($xmlfile, 'w') or die("can't open file");
-	//fwrite($fh, $string);
-	//fclose($fh);
-	
-	return $string;
-}
 
 
 
@@ -114,6 +81,36 @@ function createsankyJSON($datas,$results){
 	return $string;
 }
 
+function treeJSON($datas){
+
+	$i=0;
+
+	$string = '{"name": "questions", ';
+	$string .= "\n";
+	$string .= ' "children": [ ';
+ 				
+
+
+	foreach ($datas as $question => $data){
+		$string .= ' { ';
+		$string .= '"name": "'.$question.'",';
+		$string .= '"children": [';
+	    
+			foreach ($data as $answers){
+
+				 $string .= '{"name": "'.$answers['data'] .'", "size": 5000},';
+			
+				}
+				$string = rtrim($string, ",");
+				$string .= ']},';
+	}
+	$string = rtrim($string, ",");
+	$string .= ']}';
+	
+
+	return $string;
+}
+
 
 
 function printGraphSpringy($nodes, $sessionresults){
@@ -150,4 +147,14 @@ function printGraphSpringy($nodes, $sessionresults){
 	}";
 	
 	return $string;
+}
+
+function sort_by_user($array) {
+	$out = array();
+	foreach($array as $answers)
+		print_r($answers);
+	
+	exit();
+		$out[] = "$key=$value";
+	return $out;
 }

@@ -14,23 +14,17 @@ if (isset($_SERVER['PATH_INFO'])){
 	$a = explode ("?",$requestURI);
 	$pi = explode("/",$a[0]);
 }
-ini_Set("display_errors",false);
-
 
 $propman = new property_manager();
 //1. Graph
 //2. BUBBLES
-$data=$propman->get_distinct("data");
-$people=$propman->get_distinct("session_id");
-
-foreach ($people as $person){
-	foreach($propman->get_answers($person['session_id'],"time") as $answers){
-		$results[$person['session_id']][]=$answers['data'];
-	}
-	//$result[$person['session_id']]=$propman->get_answers($person['session_id'],"time");
+$widgets=$propman->get_distinct("widget");
+foreach ($widgets as $widget){
+	$widgetresults[$widget['widget']]=$propman->get_widgetresults($widget['widget']);
 }
 
-print createSankyJSON($data,$results);
+
+print treeJson($widgetresults);
 
 //$smarty->display("d3_backend_circle.tpl");
 
