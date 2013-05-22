@@ -35,7 +35,7 @@ path.link {
 
 
 $.ajax({
-	  url: 'http://109.74.200.115/Omelette/lib/backend_treeview.php',
+	  url: 'http://109.74.200.115/Omelette/lib/backend_tree.php',
 	  dataType: 'json',
 	  cache: false,
 	  data: {},
@@ -65,7 +65,7 @@ var vis = d3.select("#chart").append("svg:svg")
   .append("svg:g")
     .attr("transform", "translate(20,30)");
 
-d3.json("http://109.74.200.115/Omelette/lib/backend_circle.php", function(json) {
+d3.json("http://109.74.200.115/Omelette/lib/backend_tree.php", function(json) {
   json.x0 = 0;
   json.y0 = 0;
   update(root = json);
