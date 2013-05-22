@@ -70,4 +70,50 @@ function draw(words) {
 	})
 	.text(function(d) { return d.text; });
 }
+
+
+$.ajax({
+	  url: 'http://109.74.200.115/Omelette/lib/backend_wordl.php',
+	  dataType: 'html',
+	  cache: false,
+	  data: {},
+	  success: function(data, textStatus) {
+		  console.log(data)
+		  publish(data);
+	  },
+	 
+	});
+  
+function publish(data){
+setInterval( function(){
+	
+$.ajax({
+	  url: 'http://109.74.200.115/Omelette/lib/backend_wordl.php',
+	  dataType: 'html',
+	  cache: false,
+	  newdata: {},
+	  success: function(newdata, textStatus) {
+		  
+		
+	
+				
+		if (data != newdata){ 
+			location.reload()				
+		}
+	  },
+	 
+	});
+
+
+  
+}
+, 5000 );
+};
+
+  
+
+
+
+</script>
+
 </script>
