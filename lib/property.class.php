@@ -60,6 +60,19 @@ class property_manager{
 		
 	}
 	
+	function grabwords(){
+			
+		$sql="SELECT  data from  properties ";
+		$properties=$this->simplesql($sql);
+		
+		 	foreach ($properties as $property){
+				$result[] = preg_split('/((^\p{P}+)|(\p{P}*\s+\p{P}*)|(\p{P}+$))/', $property['data'], -1, PREG_SPLIT_NO_EMPTY);
+		 	}
+		
+		return $result;
+	
+	}
+	
 	function get_sessionresults($sessionname){
 		$sql="SELECT widget, data from  properties WHERE session_id LIKE '$sessionname' ";
 		$properties=$this->simplesql($sql);
@@ -134,6 +147,55 @@ class property_manager{
 		return $data;
 	}
 	
+	function set_questions($form){
+		
+		$sql="TRUNCATE TABLE multiple	;" ;
+		
+		$this->simplesql($sql);
+		
+	foreach ($form as $type => $entry){
+				if ($type == "question"){
+					$sql='INSERT INTO multiple (type,data) VALUES ("Question", "' . $entry . '")';
+					$properties=$this->simplesql($sql);
+				}
+				
+				
+				if ($type == "answer"){
+					foreach ($entry as $id => $answer){
+						
+						$sql='INSERT INTO multiple (type,data) VALUES ("Answer", "' . $answer . '")';
+						$properties=$this->simplesql($sql);
+					}
+				}
+				
+		
+		}
+		
+		
+		//return $properties;
+	
+	}
+	
+	function get_formanswers(){
+	
+		$sql="SELECT  data from  multiple WHERE type LIKE 'answer' ";
+		$data=$this->simplesql($sql);
+		return $data;;
+	
+	
+	}
+	
+	function get_formquestions(){
+	
+		$sql="SELECT  data from  multiple WHERE type LIKE 'question' ";
+		$data=$this->simplesql($sql);
+	
+
+
+	
+		return $data['0']['data'];
+	
+	}
 	
 	/* backup the db OR just a table */
 	function backup_tables()

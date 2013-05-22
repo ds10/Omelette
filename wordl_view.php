@@ -1,3 +1,12 @@
+<?php 
+
+
+require_once "lib/init.php";
+
+$properties=new property_manager();
+$words= $properties->grabwords();
+
+?>
 <!DOCTYPE html>
 <meta charset="utf-8">
 <script src="lib/js/d3.v3.min.js"></script>
@@ -14,15 +23,23 @@ keyword = "",
 tags,
 fontSize,
 maxLength = 30,
-fetcher = "http://search.twitter.com/search.json?rpp=100&q={word}",
 statusText = d3.select("#status");
 
 
 
 d3.layout.cloud().size([300, 300])
 .words([
-"Hello", "world", "normally", "you", "want", "more", "words",
-"than", "this"].map(function(d) {
+<?php
+	$string = "";
+	foreach ($words as $word){
+		foreach ($word as $single){
+		$string .= '"'.$single.'",';
+	}
+	}
+	$string = rtrim($string, ",");
+	print $string;
+?>
+].map(function(d) {
 return {text: d, size: 10 + Math.random() * 90};
 }))
 .rotate(function() { return ~~(Math.random() * 2) * 90; })

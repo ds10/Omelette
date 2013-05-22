@@ -112,7 +112,6 @@ function treeJSON($datas){
 }
 
 
-
 function printGraphSpringy($nodes, $sessionresults){
 
 
