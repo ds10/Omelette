@@ -86,7 +86,7 @@ function testResults (form) {
 
 function touch(name, session, answer) {
 	 $.ajax({
-		  url: 'http://109.74.200.115/Omelette/properties/' + session + '.' + name + '/' + answer + '/',
+		  url: 'http://109.74.200.115/Omelette/properties/' + encodeURIComponent(session) + '.' + encodeURIComponent(name) + '/' + encodeURIComponent(answer) + '/',
 		  dataType: 'html',
 		  data: {},
 		  success: function(data, textStatus) {
