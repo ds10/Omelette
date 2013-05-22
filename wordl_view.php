@@ -11,6 +11,7 @@ $words= $properties->grabwords();
 <meta charset="utf-8">
 <script src="lib/js/d3.v3.min.js"></script>
 <script src="lib/js/d3.layout.cloud.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
 <body>
 <script>
 var fill = d3.scale.category20();
