@@ -23,6 +23,39 @@ function writeSessionCSV ($sessionresults){
 }
 
 
+function circlePackingJson($widgetresults){
+	$propman = new property_manager();
+	$string = "{";
+	$string .= '
+			    "name": "omelette",
+			';
+	$string .= '"children": [
+			';
+
+	foreach ($widgetresults as $widget => $dataArray){
+		$string .= " { \n";
+		$string .= ' "name": "'.$widget.'",
+				';
+		$string .= ' "children": [ ';
+		foreach ($dataArray as $data){
+			$num=$propman->get_count('data',$data['data']);
+			$string .= '
+			{"name": "'.$data['data'].'", "size":'.$num.'},';
+		}
+		$string = rtrim($string, ",");
+		$string .= "] \n";
+		$string .= "},";
+	}
+	$string = rtrim($string, ",");
+	$string .= "]}";
+
+	//$xmlfile = "bullets.json";
+	//$fh = fopen($xmlfile, 'w') or die("can't open file");
+	//fwrite($fh, $string);
+	//fclose($fh);
+
+	return $string;
+}
 
 
 
