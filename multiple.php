@@ -53,7 +53,7 @@ function publish(data){
 setInterval( function(){
 	
 $.ajax({
-	  url: 'http://109.74.200.115/Omelette//lib/backend_questions.php',
+	  url: 'http://109.74.200.115/Omelette/lib/backend_questions.php',
 	  dataType: 'html',
 	  cache: false,
 	  newdata: {},
