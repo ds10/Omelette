@@ -144,6 +144,35 @@ function treeJSON($datas){
 	return $string;
 }
 
+function barJSON($datas){
+
+	$i=0;
+
+	$string = '{"name": "questions", ';
+	$string .= "\n";
+	$string .= ' "children": [ ';
+		
+
+
+	foreach ($datas as $question => $data){
+		$string .= ' { ';
+		$string .= '"name": "'.$question.'",';
+		$string .= '"children": [';
+	  
+		foreach ($data as $answers){
+
+			$string .= '{"name": "'.$answers['data'] .'", "size": 1},';
+				
+		}
+		$string = rtrim($string, ",");
+		$string .= ']},';
+	}
+	$string = rtrim($string, ",");
+	$string .= ']}';
+
+
+	return $string;
+}
 
 function printGraphSpringy($nodes, $sessionresults){
 
