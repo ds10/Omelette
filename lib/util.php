@@ -131,7 +131,7 @@ function treeJSON($datas){
 	    
 			foreach ($data as $answers){
 
-				 $string .= '{"name": "'.$answers['data'] .'", "size": 5000},';
+				 $string .= '{"name": "'.$answers['data'] .'", "size": 1},';
 			
 				}
 				$string = rtrim($string, ",");
