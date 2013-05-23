@@ -32,8 +32,20 @@ rect.background {
    
     </h2>
     <script type="text/javascript" src="lib/js/d3.v3.min.js"></script>
+        <script type="text/javascript" src="lib/js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript">
-
+    
+    $.ajax({
+  	  url: 'http://109.74.200.115/Omelette/lib/backend_bar.php',
+  	  dataType: 'json',
+  	  cache: false,
+  	  data: {},
+  	  success: function(data, textStatus) {
+  		   publish(data);
+  	  },
+  	 
+  	});
+    
 var m = [80, 160, 0, 160], // top right bottom left
     w = 1280 - m[1] - m[3], // width
     h = 800 - m[0] - m[2], // height
@@ -226,6 +238,49 @@ function stack(i) {
     x0 += x(d.value);
     return tx;
   };
+}
+
+
+
+
+function publish(data){
+	
+setInterval( function(){
+ 
+ $.ajax({
+	  url: 'http://109.74.200.115/Omelette/lib/backend_bar.php',
+	  dataType: 'json',
+	  cache: false,
+	  newdata: {},
+	  success: function(newdata, textStatus) {
+
+			
+		if (arraysEqual(newdata.children, data.children) == false){
+			location.reload()
+		}
+				
+		console.log(data)
+		
+	  },
+	 
+	});
+ 
+ 
+    
+}
+	, 5000 );
+
+};
+
+function arraysEqual(arr1, arr2) {
+    if(arr1.length !== arr2.length)
+        return false;
+    for(var i = arr1.length; i--;) {
+        if(arr1[i].children.length !== arr2[i].children.length)
+		  return false;
+    }
+
+    return true;
 }
 
     </script>

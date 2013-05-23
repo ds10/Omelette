@@ -95,13 +95,13 @@ li {
     
 <div class="gridster">
     <ul id="reszable">
-      <li data-row="1" data-col="3" data-sizex="4" data-sizey="3"><div class="handle">Bubbles!</div><iframe src="http://wookie.eun.org:80/wookie/wservices/incubator.apache.org/wookie/generated/C7FD0B20-827B-3ED7-1257-1A8A62F9F9D5/index.html?idkey=5qrf2G84cdLbsVc6oJ63GAunuRU.eq.&proxy=http://wookie.eun.org:80/wookie/proxy&st=" width="800" height="600"></iframe></li>
+      <li data-row="1" data-col="3" data-sizex="4" data-sizey="3"><div class="handle">Bubbles!</div><iframe src="http://109.74.200.115/Omelette/tree_view.html" width="800" height="800"></iframe></li>
     
         <li data-row="1" data-col="1" data-sizex="1" data-sizey="1"><div class="handle">About</div>This is the overview Dashboard of the Bolton Employability event. <a href="http://109.74.200.115/Omelette/sanky_view.html">Experimental map of the current activity is here.</a><br/><br/>TODO other links  #BoltonEmploy</li>
         <!--  <li data-row="2" data-col="1" data-sizex="1" data-sizey="1"><div class="handle">2</div></li>
         <li data-row="3" data-col="1" data-sizex="1" data-sizey="1"><div class="handle">3</div></li>
         <li data-row="1" data-col="2" data-sizex="2" data-sizey="1"><div class="handle">4</div></li>--> 
-        <li data-row="1" data-col="1" data-sizex="2" data-sizey="2"><div class="handle">Connections</div> <iframe src="http://wookie.eun.org:80/wookie/wservices/incubator.apache.org/wookie/generated/E076EC0C-15E9-D95C-BFED-F29214C780F6/index.html?idkey=ssulXYRUS.pl.HsWdEDt1Xfc2u0pQA.eq.&proxy=http://wookie.eun.org:80/wookie/proxy&st=" width="260" height="300"></iframe></li>
+        <li data-row="1" data-col="1" data-sizex="2" data-sizey="2"><div class="handle">Connections</div> <iframe frameBorder="0" src="http://109.74.200.115/Omelette/circle_view.html" width="260" height="300"></iframe></li>
        <!--  <li data-row="1" data-col="4" data-sizex="1" data-sizey="1"><div class="handle">6</div></li> -->
         <!--    <li data-row="3" data-col="4" data-sizex="1" data-sizey="1"><div class="handle">8</div></li>
         <li data-row="1" data-col="5" data-sizex="1" data-sizey="1"><div class="handle">9</div></li>
