@@ -28,7 +28,7 @@ statusText = d3.select("#status");
 
 
 
-d3.layout.cloud().size([300, 300])
+d3.layout.cloud().size([800, 800])
 .words([
 <?php
 	$string = "";
@@ -55,8 +55,8 @@ function draw(words) {
 
 
 	d3.select("body").append("svg")
-	.attr("width", 300)
-	.attr("height", 300)
+	.attr("width", 800)
+	.attr("height", 800)
 	.append("g")
 	.attr("transform", "translate(150,150)")
 	.selectAll("text")

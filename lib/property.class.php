@@ -214,6 +214,8 @@ class property_manager{
 		
 		$properties=$this->simplesql($sql);
 		
+		$sql='INSERT INTO properties (widget,session_id,data) VALUES ("Welcome","1","welcome")';
+		$properties=$this->simplesql($sql);
 		
 	}
 	
