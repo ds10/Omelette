@@ -235,7 +235,8 @@ class database_record{
 	 	
 	 	
 	 	foreach($this->col_data as $key=>$value){
-	 		$field=$value["Field"];
+	 		$field = filter_var($value["Field"],FILTER_SANITIZE_SPECIAL_CHARS);
+	 		//$field=$value["Field"];
 	 		if ($field!='id'){
 	 			if (isset($this->$field)){			
 					$sql.="`$field`='".addslashes($this->$field)."', ";
