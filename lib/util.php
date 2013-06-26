@@ -130,9 +130,11 @@ function treeJSON($datas){
 		$string .= '"children": [';
 	    
 			foreach ($data as $answers){
-
+				$answers['data'] = filter_var($answers['data'],FILTER_SANITIZE_ENCODED);
+				
 				 $string .= '{"name": "'.$answers['data'] .'", "size": 1},';
 			
+				
 				}
 				$string = rtrim($string, ",");
 				$string .= ']},';
