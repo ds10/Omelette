@@ -130,7 +130,7 @@ function treeJSON($datas){
 		$string .= '"children": [';
 	    
 			foreach ($data as $answers){
-				$answers['data'] = filter_var($answers['data'],FILTER_SANITIZE_SPECIAL_CHARS);
+				$answers['data'] = filter_var($answers['data'],FILTER_UNSAFE_RAW);
 				
 				 $string .= '{"name": "'.$answers['data'] .'", "size": 1},';
 			
